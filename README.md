@@ -1,3 +1,3 @@
-# BPE Tokenizer, implemented with numpy only
+# BPE Tokenizer, implemented with numpy only from scratch
 
 Trained with input.txt
