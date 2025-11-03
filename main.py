@@ -21,5 +21,5 @@ tok = BPETokenizer.load(vocab_size=1000, specials=Specials(
     PAD=256, BOS=257, EOS=258), path='./saved')
 
 # encode -> batch -> decode
-ids = tok.encode('testing bpe tokenizer', add_bos=True, add_eos=True)
+ids = tok.encode('testi', add_bos=True, add_eos=True)
 print(f'\nids: {ids[:24]}')
