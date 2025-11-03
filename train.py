@@ -1,5 +1,7 @@
 import numpy as np
 
+import sys
+
 from typing import Dict, List, Optional, Iterable, Tuple
 
 from vocab import Vocab
@@ -10,7 +12,7 @@ from data import GetData
 
 def ttob(text: Iterable[str]) -> list[np.ndarray]:
     seqs: list[np.ndarray] = [np.frombuffer(
-        t.encode('utf-8'), dtype=np.uint8).astype(np.int64) for t in text]
+        t.encode('utf-8'), dtype=np.uint8).astype(np.uint64) for t in text]
     # print(f'print(seqs[:10]): {print(seqs[:10])}')
     return seqs
 
@@ -18,7 +20,7 @@ def ttob(text: Iterable[str]) -> list[np.ndarray]:
 def count_pairs(seqs: list[np.ndarray]) -> Dict[Tuple[int, int], int]:
     counts: Dict[Tuple[int, int], int] = {}
     # print(f"len(seqs): {len(seqs)}")
-    for s in seqs:
+    for idx, s in enumerate(seqs):
         if s.size < 2:
             continue
         left, right = s[: -1], s[1:]
@@ -28,7 +30,7 @@ def count_pairs(seqs: list[np.ndarray]) -> Dict[Tuple[int, int], int]:
             key = (int(a), int(b))
             counts[key] = counts.get(key, 0) + 1
             # print(counts)
-    # print(f'counts: {counts[:10]}')
+
     return counts
 
 
@@ -59,6 +61,8 @@ def merge_seq(seq, a, b, new_id):
 def train_bpe(vocab: Vocab, text: Iterable[str], max_vocab_size: int) -> None:
     # max_vocab_size = max(256, int(max_vocab_size))
     # seqs = ttob(text)
+
+    total_merges = max_vocab_size - vocab.size
     seqs = ttob(text if not isinstance(text, str)else [text])
     rank_counter = 0
     while vocab.size < max_vocab_size:
@@ -85,13 +89,21 @@ def train_bpe(vocab: Vocab, text: Iterable[str], max_vocab_size: int) -> None:
                 continue
             seqs[i] = merge_seq(s, a, b, new_id)
 
+        done = vocab.size - 256
+        percent = min(1.0, done / total_merges)
+        bar_len = 30
+        filled = int(bar_len * percent)
+        bar = "🟩" * filled + '-' * (bar_len - filled)
+        sys.stdout.write(
+            f"\rTraining BPE | {bar} | {percent*100:5.1f}% \nVocab: {vocab.size}/{max_vocab_size}")
+        sys.stdout.flush()
 
-# get_data = GetData('./input.txt')
-# data = get_data.read_data()
+
+# data = GetData('./input.txt').read_data()
 # print(data[:100])
 
 # vocab = Vocab()
-# train = train_bpe(vocab, data, max_vocab_size=5000)
+# train = train_bpe(vocab, data, max_vocab_size=1000)
 # raw = data.replace('\r\n', '\n')
 # print(raw[:100])
 # # print(data[:10])

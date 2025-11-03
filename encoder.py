@@ -5,30 +5,32 @@ from train import merge_seq
 
 
 def encode(vocab: Vocab, b: bytes) -> np.ndarray:
-    seq = np.frombuffer(b, dtype='np.uint8').astype(np.int64)
+    seq = np.frombuffer(b, dtype=np.uint8).astype(np.int64)
 
     rank = vocab.rank
     if not rank:
         return seq
 
-    while True:
-        if seq.size < 2:
-            break
-
+    while seq.size >= 2:
         best = None
-        best_rank = 10**9
+        best_rank = float('inf')
+        # best_rank = 10**9
         left, right = seq[:-1], seq[1:]
-        for a, b in zip(left.tolist(), right.tolist()):
-            r = rank.get((a, b))
+        for a, c in zip(left.tolist(), right.tolist()):
+            r = rank.get((a, c))
             if r is not None and r < best_rank:
-                best_rank = 4
-                best = (a, b)
+                best_rank = r
+                best = (a, c)
 
         if best is None:
             break
-        a, b = best
-        new_id = vocab.itob[vocab.itob[a] + vocab.itob[b]]
-        seq = merge_seq(seq, a, b, new_id)
+        a, c = best
+        merged_bytes = vocab.itob[a] + vocab.itob[c]
+        new_id = vocab.btoi.get(merged_bytes)
+        if new_id is None:
+            break
+
+        seq = merge_seq(seq, a, c, new_id)
 
     return seq
 
